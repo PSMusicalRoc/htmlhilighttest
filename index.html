@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="libs/highlightjs/styles/a11y-dark.min.css">
+        <style>
+            ol {
+                margin: 0;
+                display: block;
+            }
+
+            body {
+                counter-reset: section;
+            }
+
+            .lineNum {
+                display: inline-block;
+            }
+
+            .lineNum:before {
+                counter-increment: section;
+                content: counter(section) ".";
+                position: absolute;
+                margin-left: -30px;
+            }
+        </style>
+        <script src="public/largeFileHandling.js"></script>
+        <script>
+            function loadFile() {
+                var file = document.getElementById("fileIn").files[0];
+                console.log(file.text());
+            }
+
+            function highlightCode(contents, ext, first) {
+                const p = new Promise((resolve, reject) => {
+                    var xmlHttp = new XMLHttpRequest();
+                    xmlHttp.onreadystatechange = function() { 
+                        if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+                            document.getElementById("fileContents").innerHTML += xmlHttp.responseText;
+                            resolve("Success");
+                        }
+                    }
+                    xmlHttp.open("POST", "/highlight", true); // true for asynchronous
+                    xmlHttp.setRequestHeader(
+                        "Content-Type", "application/x-www-form-urlencoded"
+                    );
+                    xmlHttp.send("contents="+contents+"&lang="+ext);
+                    //SetTimeout for the content to return
+                });
+                return p;
+            }
+
+            function getLanguage(filename) {
+                out = fetch("http://localhost/ext?f="+filename)
+                    .then(response => response.blob())
+                    .then(blob => blob.text())
+                    .then(function(val) {return val});
+                return out;
+            }
+        </script>
+    </head>
+    <body>
+        <pre><code id="fileContents">
+class D:
+    def __init__(self):
+        self.s = 1
+        </code></pre>
+        <form>
+            <input type="file" id="fileIn" />
+            <script>
+            function readSingleFile(evt) {
+                //Retrieve the first (and only!) File from the FileList object
+                var f = evt.target.files[0]; 
+        
+                if (f) {
+                    /*var r = new FileReader();
+                    r.onload = function(e) {
+                        var isFirst = true;
+                        getLanguage(f.name)
+                        .then(lang => {
+                            highlightCode(contents, lang, isFirst);
+                        });
+                    }
+                    r.readAsText(f);*/
+                    document.getElementById("fileContents").innerHTML = "";
+                    let lang = getLanguage(f.name);
+                    highlightCode("", "START", false);
+                    readInFile(f, (contents) => {
+                        lang.then(l => {
+                            highlightCode(contents, l, false);
+                        });
+                    });
+                    highlightCode("", "END", false);
+                }
+            }
+            document.getElementById("fileIn").addEventListener("change", readSingleFile, false);
+            </script>
+        </form>
+    </body>
+</html>

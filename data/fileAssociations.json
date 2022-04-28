@@ -1,0 +1,10 @@
+{
+    ".c": "c",
+    ".h": "c",
+    ".cpp": "cpp",
+    ".hpp": "cpp",
+    ".java": "java",
+    ".html": "html",
+    ".css": "css",
+    ".json": "json"
+}
