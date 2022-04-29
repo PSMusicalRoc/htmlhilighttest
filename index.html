@@ -50,7 +50,7 @@
             }
 
             function getLanguage(filename) {
-                out = fetch("http://localhost/ext?f="+filename)
+                out = fetch("/ext?f="+filename)
                     .then(response => response.blob())
                     .then(blob => blob.text())
                     .then(function(val) {return val});
