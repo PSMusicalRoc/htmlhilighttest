@@ -6,8 +6,31 @@ const app = express();
 const hljs = require("highlight.js");
 const bparse = require("body-parser");
 
+const mysql = require("mysql");
+const sqlAccess = JSON.parse(fs.readFileSync("data/mysqlLogin.json"));
+
 //let text = "//#define IMGUI_DISABLE_DEFAULT_FORMAT_FUNCTIONS            // Don't implement ImFormatString/ImFormatStringV so you can implement them yourself (e.g. if you don't want to link with vsnprintf)";
 //console.log(highlightContent(text, "c"));
+
+function doSQLQuery(sql, user, password, callback) {
+    var conn = mysql.createConnection({
+        host: sqlAccess["host"],
+        user: user,
+        password: password,
+        database: "model"
+    });
+    conn.connect(function(err) {
+        if (err) {
+            console.log("Could not connect to SQL");
+            throw err;
+        }
+    });
+
+    conn.query(sql, function(err, result) {
+        if (err) throw err;
+        callback(result);
+    });
+}
 
 let totalContents = "";
 let shouldBuffer = false;
@@ -85,17 +108,61 @@ app.get("/", (req, res) => {
     res.send(returnText);
 });
 
+app.get("/classList", (req, res) => {
+    res.sendFile(__dirname + "/classView.html");
+});
+
+app.get("/getClasses", (req, res) => {
+    doSQLQuery(
+        "SELECT * FROM classes",
+        sqlAccess["guest"]["username"],
+        sqlAccess["guest"]["password"],
+        (result) => {
+            res.send(result);
+    });
+});
+
+app.get("/classes/:classID/documents", (req, res) => {
+    let html = fs.readFileSync(__dirname + "/documentView.html");
+    let parts = html.toString().split("class=\"className\">");
+    let returnString = "";
+    parts.forEach(part => {
+        if (returnString != "") {
+            returnString += "class=\"className\">";
+            returnString += req.params.classID;
+        }
+        returnString += part;
+    });
+    returnString = returnString.replace("/getDocuments", "/getDocuments/"+req.params.classID);
+    res.send(returnString);
+});
+
+app.get("/getDocuments/:classID", (req, res) => {
+    //console.log(req.params.classID.toUpperCase());
+    let classID = doSQLQuery(
+        "SELECT ClassID FROM classes WHERE ShortName='" + req.params.classID.toUpperCase() + "'",
+        sqlAccess["guest"]["username"],
+        sqlAccess["guest"]["password"],
+        (result) => {
+            let classID = result[0]["ClassID"];
+            //Another SQL query, this time getting all the documents
+            //matching the classID
+            doSQLQuery(
+                "SELECT * FROM documents WHERE ClassID=" + classID + ";",
+                sqlAccess["guest"]["username"],
+                sqlAccess["guest"]["password"],
+                (result) => {
+                    res.send(result);
+            });
+    });
+});
+
 app.get("/ext", (req, res) => {
     var filename = url.parse(req.url, true).query["f"];
     var extension = path.extname(filename);
     if (!extension) {res.send("NONE");}
     else {res.send(fileAssociations[extension]);}
     res.status(200).end();
-});
-
-app.post("/test", (req, res) => {
-    let contents = req.body.contents;
-    console.log(contents);
 });
 
 app.post("/highlight", (req, res) => { 

@@ -1,0 +1,7 @@
+{
+    "host": "tb-notes.rh.rit.edu",
+    "guest": {
+        "username": "guest",
+        "password": ""
+    }
+}

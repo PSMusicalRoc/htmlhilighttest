@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Classes</title>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <style>
+            .class {
+                border-radius: 40px;
+                width: 90%;
+                display: block;
+                margin: auto;
+                border: 4px black solid;
+            }
+
+            #pageTitle {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                text-align: center;
+                font-size: 40px;
+            }
+
+            .title {
+                text-align: center;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+
+            .description {
+                color: gray;
+                font-size: 16px;
+                text-align: center;
+                font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+        </style>
+        <script>
+        $(document).ready(function() {
+            $.get("/getClasses", function(data, status) {
+                if (status == "success") {
+                    data.forEach(element => {
+                        $("#classes").html(function(i, orig) {
+                            return orig +
+                            "<div class='class'><h2 class='title'><a href='/classes/"
+                            +encodeURIComponent(element["ShortName"].toLowerCase())
+                            +"/documents'>"
+                            +element["ShortName"] + ": " + element["LongName"]
+                            +"</a></h2>"
+                            +"<p class='description'>"
+                            +element["ClassDescription"]
+                            +"</p>"
+                            +"</div><br>";
+                        });
+                    });
+                }
+            });
+        });
+        </script>
+    </head>
+    <body>
+        <h1 id="pageTitle">Classes</h1>
+        <div id="classes"></div>
+    </body>
+</html>
